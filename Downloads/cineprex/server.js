@@ -90,7 +90,15 @@ runAutoUpdate((changedIds, newState) => {
     if (st) logger.logStatusChange(id, '?', st.status, false);
   });
 });
-
+// 追加：現在のスケジュール（状態）を取得するAPI
+app.get('/api/schedule', (req, res) => {
+  try {
+    const state = readJSON(STATE_PATH) || [];
+    res.json(state);
+  } catch (e) {
+    res.status(500).json({ error: 'データの読み込みに失敗しました' });
+  }
+});	
 // ── API: 手動ステータス変更 ───────────────────────────
 app.post('/api/update', async (req, res) => {
   const { screenId, status } = req.body;
