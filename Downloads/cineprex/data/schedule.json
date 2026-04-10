@@ -1,0 +1,10 @@
+[
+  { "screenId": 1, "title": "劇場版 鬼滅の刃 無限城編", "previewStart": "10:00", "mainStart": "10:10", "endTime": "12:15" },
+  { "screenId": 2, "title": "DUNE: PART TWO",            "previewStart": "10:20", "mainStart": "10:30", "endTime": "13:05" },
+  { "screenId": 3, "title": "関心領域",                   "previewStart": "10:35", "mainStart": "10:45", "endTime": "12:50" },
+  { "screenId": 4, "title": "あんのこと",                  "previewStart": "11:00", "mainStart": "11:10", "endTime": "12:58" },
+  { "screenId": 5, "title": "ゴジラ-1.0",                 "previewStart": "11:15", "mainStart": "11:25", "endTime": "13:48" },
+  { "screenId": 6, "title": "オッペンハイマー",            "previewStart": "11:30", "mainStart": "11:45", "endTime": "14:45" },
+  { "screenId": 7, "title": "ルックバック",                "previewStart": "12:00", "mainStart": "12:10", "endTime": "13:10" },
+  { "screenId": 8, "title": "インサイド・ヘッド 2",        "previewStart": "12:20", "mainStart": "12:30", "endTime": "14:25" }
+]

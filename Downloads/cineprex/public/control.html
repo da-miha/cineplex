@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>操作パネル — シネプレックス</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&family=Bebas+Neue&display=swap">
+<style>
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { background:#080910; font-family:'Noto Sans JP',sans-serif; color:#b0b8d8; min-height:100vh; }
+
+/* ── ヘッダー ── */
+#hdr {
+  position:sticky; top:0; z-index:100;
+  background:#070810; border-bottom:1px solid #181b2a;
+  padding:10px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.hdr-title { font-size:13px; letter-spacing:.15em; color:#2e3258; text-transform:uppercase; }
+#clk { font-family:'Bebas Neue',sans-serif; font-size:20px; color:#4a5080; font-variant-numeric:tabular-nums; }
+#conn {
+  font-size:10px; padding:3px 9px; border-radius:8px;
+  background:#0e1020; color:#2a2e50; letter-spacing:.06em;
+  transition:all .3s;
+}
+#conn.live { background:#081508; color:#3a8a3a; border:1px solid #143014; }
+
+/* ── 凡例 ── */
+#legend {
+  margin:8px 12px 4px;
+  padding:8px 12px; background:#0c0e1a; border:1px solid #181b2a; border-radius:8px;
+  display:flex; flex-wrap:wrap; gap:6px 14px;
+}
+.leg { display:flex; align-items:center; gap:5px; font-size:10px; color:#2e3258; }
+.leg-dot { width:8px; height:8px; border-radius:2px; }
+
+/* ── カードリスト ── */
+#cards { padding:6px 10px 32px; display:flex; flex-direction:column; gap:8px; }
+
+/* ── 1枚カード ── */
+.card {
+  background:#0d0f1e; border:1px solid #181b2a; border-radius:10px; overflow:hidden;
+}
+.card-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 14px 2px;
+}
+.card-sc  { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:.15em; color:#283060; }
+.card-st  { font-size:11px; font-weight:700; letter-spacing:.06em; }
+.st-ready { color:#283060; }
+.st-soon  { color:#b08010; }
+.st-start { color:#d02810; }
+.st-now   { color:#803030; }
+.manual-tag {
+  font-size:8px; color:#704810; background:#120d00; border:1px solid #2a1c00;
+  border-radius:3px; padding:1px 5px; margin-left:6px;
+}
+
+.card-fields { display:flex; gap:5px; padding:4px 14px 6px; }
+.inp {
+  background:#070910; border:1px solid #1a1d30; color:#a0a8c8;
+  border-radius:6px; padding:7px 9px; font-size:12px;
+  font-family:'Noto Sans JP',sans-serif; outline:none;
+  transition:border-color .2s;
+}
+.inp:focus { border-color:#303568; }
+.inp-title { flex:1; }
+.inp-time  { width:68px; font-variant-numeric:tabular-nums; }
+
+/* ── ボタングリッド ── */
+.btns { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:0 14px 12px; }
+.btn {
+  border:none; border-radius:8px; cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif; font-weight:700;
+  letter-spacing:.04em; outline:none;
+  transition:transform .12s, opacity .12s;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.btn:active { transform:scale(.92); }
+.btn.active { box-shadow:0 0 0 2.5px #fff inset; }
+
+.btn-ready { background:#141620; color:#404870; padding:11px 0; font-size:11px; }
+.btn-soon  { background:#1c1400; color:#c08810; padding:11px 0; font-size:11px; }
+.btn-now   { background:#140404; color:#904848; padding:11px 0; font-size:11px; }
+
+/* 入場開始ボタン：2カラム幅・最大サイズ */
+.btn-start {
+  grid-column: 1 / -1;
+  background:#240800; color:#e84828;
+  padding:18px 0; font-size:15px;
+  border:1px solid #3a0e00;
+}
+.btn-start.active {
+  box-shadow:0 0 0 2.5px #fff inset, 0 0 14px rgba(200,40,0,.25);
+}
+@keyframes start-glow { 0%,100%{box-shadow:0 0 6px rgba(200,50,20,.15)} 50%{box-shadow:0 0 18px rgba(200,50,20,.45)} }
+.btn-start:not(.active):not(:active) { animation:start-glow 2s ease-in-out infinite; }
+
+/* ── 確認ダイアログ ── */
+#confirm-overlay {
+  position:fixed; inset:0;
+  background:rgba(5,6,14,.88); z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+#confirm-overlay.show { opacity:1; pointer-events:all; }
+#confirm-box {
+  background:#0e1020; border:1px solid #282c4a; border-radius:14px;
+  padding:24px 20px; width:290px; text-align:center;
+}
+#confirm-msg { font-size:15px; font-weight:700; color:#c0c8e8; margin-bottom:18px; line-height:1.5; }
+.conf-btns { display:flex; gap:10px; }
+#conf-ok {
+  flex:1; background:#c02010; color:#fff;
+  border:none; border-radius:8px; padding:14px 0;
+  font-family:'Noto Sans JP',sans-serif; font-size:14px; font-weight:700;
+  cursor:pointer;
+}
+#conf-cancel {
+  flex:1; background:#141620; color:#6070a0;
+  border:1px solid #282c4a; border-radius:8px; padding:14px 0;
+  font-family:'Noto Sans JP',sans-serif; font-size:14px;
+  cursor:pointer;
+}
+
+/* ── トースト ── */
+#toast {
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background:#141820; color:#a0b0d0; padding:9px 20px;
+  border-radius:14px; font-size:12px; border:1px solid #242840;
+  opacity:0; pointer-events:none; z-index:300;
+  transition:opacity .22s; white-space:nowrap;
+}
+#toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div class="hdr-title">操作パネル</div>
+  <div id="clk">--:--:--</div>
+  <div id="conn">オフライン</div>
+</div>
+
+<div id="legend">
+  <div class="leg"><div class="leg-dot" style="background:#1e2240"></div>準備中</div>
+  <div class="leg"><div class="leg-dot" style="background:#b08010"></div>まもなく（自動）</div>
+  <div class="leg"><div class="leg-dot" style="background:#c02810"></div>入場開始（手動）</div>
+  <div class="leg"><div class="leg-dot" style="background:#882020"></div>上映中（自動）</div>
+</div>
+
+<div id="cards"></div>
+
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-msg"></div>
+    <div class="conf-btns">
+      <button id="conf-ok">確定</button>
+      <button id="conf-cancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const META = {
+  ready: { label:'準備中',       cls:'st-ready', btnCls:'btn-ready' },
+  soon:  { label:'まもなく入場', cls:'st-soon',  btnCls:'btn-soon'  },
+  start: { label:'入場開始',     cls:'st-start', btnCls:'btn-start' },
+  now:   { label:'上映中',       cls:'st-now',   btnCls:'btn-now'   },
+};
+
+let schedule = [], state = [];
+const cardsEl  = document.getElementById('cards');
+const connEl   = document.getElementById('conn');
+
+// 時計
+(function tick() {
+  const n = new Date(), p = v => String(v).padStart(2,'0');
+  document.getElementById('clk').textContent =
+    `${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+  setTimeout(tick, 1000);
+})();
+
+// 確認ダイアログ
+let confirmCallback = null;
+const overlay    = document.getElementById('confirm-overlay');
+const confirmMsg = document.getElementById('confirm-msg');
+document.getElementById('conf-ok').onclick = () => {
+  overlay.classList.remove('show');
+  if (confirmCallback) { confirmCallback(); confirmCallback = null; }
+};
+document.getElementById('conf-cancel').onclick = () => {
+  overlay.classList.remove('show'); confirmCallback = null;
+};
+function confirm(msg, cb) {
+  confirmMsg.textContent = msg;
+  confirmCallback = cb;
+  overlay.classList.add('show');
+}
+
+// トースト
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// esc
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// デバウンス
+function debounce(fn, ms) {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+// 描画
+function render() {
+  schedule.forEach(sc => {
+    const st  = state.find(s => s.screenId === sc.screenId) || { status:'ready', manualOverride:false };
+    const m   = META[st.status] || META.ready;
+
+    let card = document.getElementById(`card-${sc.screenId}`);
+    if (!card) {
+      card = document.createElement('div');
+      card.className = 'card';
+      card.id = `card-${sc.screenId}`;
+      cardsEl.appendChild(card);
+    }
+
+    card.innerHTML = `
+      <div class="card-head">
+        <div style="display:flex;align-items:center">
+          <span class="card-sc">シアター ${sc.screenId}</span>
+          ${st.manualOverride ? '<span class="manual-tag">手動ロック</span>' : ''}
+        </div>
+        <span class="card-st ${m.cls}">${m.label}</span>
+      </div>
+      <div class="card-fields">
+        <input class="inp inp-title" data-id="${sc.screenId}" data-f="title"
+          value="${esc(sc.title||'')}" placeholder="作品名">
+        <input class="inp inp-time" data-id="${sc.screenId}" data-f="previewStart"
+          value="${esc(sc.previewStart||'')}" placeholder="HH:MM" maxlength="5">
+      </div>
+      <div class="btns">
+        <button class="btn btn-ready${st.status==='ready'?' active':''}" data-id="${sc.screenId}" data-s="ready">準備中</button>
+        <button class="btn btn-soon${st.status==='soon'?' active':''}"   data-id="${sc.screenId}" data-s="soon">まもなく</button>
+        <button class="btn btn-now${st.status==='now'?' active':''}"     data-id="${sc.screenId}" data-s="now">上映中</button>
+        <button class="btn btn-start${st.status==='start'?' active':''}" data-id="${sc.screenId}" data-s="start">▶ 入場開始</button>
+      </div>`;
+  });
+
+  // イベント：入力
+  cardsEl.querySelectorAll('.inp').forEach(el => {
+    el.oninput = debounce(e => {
+      const id = +e.target.dataset.id, f = e.target.dataset.f;
+      const sc = schedule.find(s => s.screenId === id);
+      if (sc) sc[f] = e.target.value;
+    }, 400);
+  });
+
+  // イベント：ボタン
+  cardsEl.querySelectorAll('.btn').forEach(btn => {
+    btn.onclick = e => {
+      const id = +e.currentTarget.dataset.id;
+      const ns = e.currentTarget.dataset.s;
+      const st = state.find(s => s.screenId === id);
+      if (!st || st.status === ns) return;
+
+      if (ns === 'start') {
+        const sc = schedule.find(s => s.screenId === id);
+        confirm(
+          `シアター ${id}「${sc?.title||''}」\n入場開始にしますか？\n（音声案内が流れます）`,
+          () => sendUpdate(id, ns)
+        );
+      } else {
+        sendUpdate(id, ns);
+      }
+    };
+  });
+}
+
+// API コール
+async function sendUpdate(screenId, status) {
+  try {
+    const r = await fetch('/api/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ screenId, status }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      state = d.state;
+      render();
+      toast(`SC${screenId} → ${META[status]?.label}`);
+    } else {
+      toast(`エラー: ${d.error}`);
+    }
+  } catch(e) {
+    toast('通信エラー');
+  }
+}
+
+// WebSocket
+let ws, reconnTimer;
+function connect() {
+  ws = new WebSocket(`ws://${location.host}`);
+  ws.onopen = () => { connEl.textContent='同期中'; connEl.className='live'; clearTimeout(reconnTimer); };
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'INIT') {
+      schedule = msg.payload.schedule || [];
+      state    = msg.payload.state    || [];
+      render();
+    } else if (msg.type === 'STATE_UPDATE') {
+      state = msg.payload.state || [];
+      render();
+    }
+  };
+  ws.onclose = () => {
+    connEl.textContent='オフライン'; connEl.className='';
+    reconnTimer = setTimeout(connect, 3000);
+  };
+  ws.onerror = () => ws.close();
+}
+connect();
+</script>
+</body>
+</html>

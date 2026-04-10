@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面 — シネプレックス</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Bebas+Neue&display=swap">
+<style>
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+body { background:#080910; font-family:'Noto Sans JP',sans-serif; color:#b0b8d8; min-height:100vh; padding:20px; }
+h1 { font-size:18px; font-weight:700; color:#c0c8e8; margin-bottom:24px; letter-spacing:.06em; }
+h2 { font-size:14px; font-weight:700; color:#8090c0; margin-bottom:12px; letter-spacing:.1em; text-transform:uppercase; }
+
+.section {
+  background:#0d0f1e; border:1px solid #181b2a; border-radius:10px;
+  padding:18px 20px; margin-bottom:20px;
+}
+
+/* CSVアップロード */
+.csv-area {
+  border:2px dashed #1e2240; border-radius:8px;
+  padding:24px; text-align:center;
+  cursor:pointer; transition:border-color .2s;
+  margin-bottom:12px;
+}
+.csv-area.drag { border-color:#4050a0; background:#0f1128; }
+.csv-area p { font-size:13px; color:#404868; margin:6px 0; }
+.csv-area strong { font-size:14px; color:#7080a8; }
+#csv-file { display:none; }
+
+.format-box {
+  background:#070910; border:1px solid #141728; border-radius:6px;
+  padding:10px 14px; font-family:monospace; font-size:12px; color:#6070a8;
+  margin-bottom:12px; line-height:1.8;
+}
+
+.btn-upload {
+  background:#1c2040; color:#8090c8; border:none; border-radius:8px;
+  padding:11px 24px; font-size:13px; font-weight:700;
+  font-family:'Noto Sans JP',sans-serif; cursor:pointer;
+  transition:background .2s;
+}
+.btn-upload:hover { background:#242850; }
+.btn-upload:disabled { opacity:.4; cursor:not-allowed; }
+
+#upload-result {
+  margin-top:10px; font-size:12px; padding:8px 12px;
+  border-radius:6px; display:none;
+}
+#upload-result.ok  { background:#081508; color:#4a8a4a; border:1px solid #143014; }
+#upload-result.err { background:#150505; color:#a04040; border:1px solid #2a1010; }
+
+/* 現在スケジュール */
+.sched-table { width:100%; border-collapse:collapse; font-size:12px; }
+.sched-table th { text-align:left; padding:6px 10px; color:#404868; font-weight:400; border-bottom:1px solid #181b2a; }
+.sched-table td { padding:7px 10px; border-bottom:1px solid #111320; color:#8090b8; }
+.sched-table tr:last-child td { border-bottom:none; }
+.sc-badge { font-family:'Bebas Neue',sans-serif; font-size:16px; color:#5060a0; }
+
+/* ログ */
+.log-controls { display:flex; gap:10px; margin-bottom:10px; }
+.inp-date {
+  background:#070910; border:1px solid #1a1d30; color:#9098c8;
+  border-radius:6px; padding:7px 10px; font-size:12px; outline:none;
+}
+.btn-load {
+  background:#141828; color:#6070a0; border:1px solid #1e2040;
+  border-radius:6px; padding:7px 14px; font-size:12px;
+  font-family:'Noto Sans JP',sans-serif; cursor:pointer;
+}
+#log-out {
+  background:#070910; border:1px solid #141728; border-radius:6px;
+  padding:10px 14px; font-family:monospace; font-size:11px; color:#505878;
+  max-height:260px; overflow-y:auto; line-height:1.8;
+  white-space:pre-wrap;
+}
+.log-start { color:#c04020; }
+.log-csv   { color:#4a7aa0; }
+.log-voice { color:#4a8a4a; }
+</style>
+</head>
+<body>
+<h1>🎬 管理画面 — シネプレックス</h1>
+
+<div class="section">
+  <h2>📋 CSVアップロード</h2>
+  <div class="format-box">
+screenId,title,previewStart,mainStart,endTime<br>
+1,劇場版 鬼滅の刃 無限城編,17:50,18:00,20:15<br>
+2,DUNE: PART TWO,18:20,18:30,21:15
+  </div>
+  <div class="csv-area" id="drop-zone">
+    <strong>CSVファイルをドロップ</strong>
+    <p>または下のボタンをタップ</p>
+    <p id="file-name" style="color:#6070a8;margin-top:8px;"></p>
+  </div>
+  <input type="file" id="csv-file" accept=".csv,text/csv">
+  <button class="btn-upload" id="btn-upload" disabled>アップロード</button>
+  <div id="upload-result"></div>
+</div>
+
+<div class="section">
+  <h2>📺 現在のスケジュール</h2>
+  <table class="sched-table" id="sched-table">
+    <thead><tr>
+      <th>SC</th><th>作品名</th><th>予告開始</th><th>本編開始</th><th>終映</th>
+    </tr></thead>
+    <tbody id="sched-body"></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>📊 運用ログ</h2>
+  <div class="log-controls">
+    <input type="date" class="inp-date" id="log-date">
+    <button class="btn-load" id="btn-log">読み込み</button>
+  </div>
+  <div id="log-out">ログを読み込んでください</div>
+</div>
+
+<script>
+'use strict';
+// 日付初期値
+document.getElementById('log-date').value = new Date().toISOString().slice(0,10);
+
+// スケジュール読み込み
+async function loadSchedule() {
+  try {
+    const r = await fetch('/api/data');
+    const d = await r.json();
+    const tb = document.getElementById('sched-body');
+    tb.innerHTML = '';
+    (d.schedule || []).forEach(sc => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="sc-badge">${sc.screenId}</span></td>
+        <td>${esc(sc.title)}</td>
+        <td>${sc.previewStart}</td>
+        <td>${sc.mainStart}</td>
+        <td>${sc.endTime}</td>`;
+      tb.appendChild(tr);
+    });
+  } catch(e) {}
+}
+loadSchedule();
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+// CSVファイル
+let selectedFile = null;
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('csv-file');
+const btnUpload = document.getElementById('btn-upload');
+const fileLabel = document.getElementById('file-name');
+
+dropZone.onclick = () => fileInput.click();
+dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add('drag'); };
+dropZone.ondragleave = () => dropZone.classList.remove('drag');
+dropZone.ondrop = e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+};
+fileInput.onchange = e => { if (e.target.files[0]) setFile(e.target.files[0]); };
+
+function setFile(f) {
+  selectedFile = f;
+  fileLabel.textContent = f.name;
+  btnUpload.disabled = false;
+}
+
+// アップロード
+const resultEl = document.getElementById('upload-result');
+btnUpload.onclick = async () => {
+  if (!selectedFile) return;
+  btnUpload.disabled = true;
+  const fd = new FormData();
+  fd.append('csv', selectedFile);
+  try {
+    const r = await fetch('/api/upload-csv', { method:'POST', body:fd });
+    const d = await r.json();
+    resultEl.style.display = 'block';
+    if (d.ok) {
+      resultEl.className = 'ok';
+      resultEl.textContent = `✅ ${d.count}件のスケジュールを更新しました`;
+      loadSchedule();
+    } else {
+      resultEl.className = 'err';
+      resultEl.textContent = '❌ ' + (d.errors || [d.error]).join(' / ');
+    }
+  } catch(e) {
+    resultEl.style.display='block';
+    resultEl.className='err';
+    resultEl.textContent='❌ 通信エラー';
+  }
+  btnUpload.disabled = false;
+};
+
+// ログ表示
+document.getElementById('btn-log').onclick = async () => {
+  const date = document.getElementById('log-date').value;
+  const out  = document.getElementById('log-out');
+  try {
+    const r = await fetch(`/api/logs?date=${date}`);
+    const logs = await r.json();
+    if (!logs.length) { out.innerHTML = '（この日のログはありません）'; return; }
+    out.innerHTML = logs.map(l => {
+      const ts   = l.ts ? l.ts.replace('T',' ').slice(0,19) : '';
+      const cls  = l.event === 'STATUS_CHANGE' && l.to === 'start' ? 'log-start'
+                 : l.event === 'CSV_UPLOAD'     ? 'log-csv'
+                 : l.event === 'VOICE_PLAYED'   ? 'log-voice' : '';
+      const body = l.event === 'STATUS_CHANGE'
+        ? `[SC${l.screenId}] ${l.from} → ${l.to}${l.manual?' (手動)':''}`
+        : l.event === 'CSV_UPLOAD'
+        ? `CSVアップロード ${l.count}件`
+        : l.event === 'VOICE_PLAYED'
+        ? `[SC${l.screenId}] 音声再生`
+        : JSON.stringify(l);
+      return `<span class="${cls}">${ts}  ${body}</span>`;
+    }).join('\n');
+  } catch(e) { out.textContent='読み込みエラー'; }
+};
+</script>
+</body>
+</html>

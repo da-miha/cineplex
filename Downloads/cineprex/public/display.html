@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>入場案内 — シネプレックス</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&family=Bebas+Neue&display=swap">
+<style>
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow:hidden; background:#0f1120; font-family:'Noto Sans JP',sans-serif; color:#c8d0f0; }
+
+/* ── レイアウト ── */
+#wrap { display:flex; flex-direction:column; height:100vh; }
+
+/* ── ヘッダー ── */
+#hdr {
+  flex-shrink:0; background:#0f1120;
+  padding:0 3vw; height:10vh;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:2px solid #1e2240;
+}
+.hdr-l { display:flex; flex-direction:column; line-height:1.25; }
+.hdr-name  { font-size:1.8vh; font-weight:300; color:#3a4070; letter-spacing:.3em; text-transform:uppercase; }
+.hdr-title { font-size:3.2vh; font-weight:900; color:#c8d0f0; letter-spacing:.08em; }
+#clock { font-family:'Bebas Neue',sans-serif; font-size:7vh; letter-spacing:.08em; color:#d0d8f8; font-variant-numeric:tabular-nums; }
+
+/* ── 行リスト ── */
+#rows { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+.row {
+  flex:1; min-height:0;
+  display:flex; align-items:stretch;
+  border-bottom:1px solid #191d35;
+  position:relative; overflow:hidden;
+  transition:background .4s, opacity .4s, filter .4s;
+}
+.row:nth-child(odd)  { background:#15192c; }
+.row:nth-child(even) { background:#0f1220; }
+
+/* 左ライン */
+.row::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:5px; background:#20254a;
+  transition:background .4s, box-shadow .4s;
+}
+
+/* ── ステータス別スタイル ── */
+.row.s-ready { opacity:.5; filter:saturate(.25) brightness(.8); }
+.row.s-ready::before { background:#252b52; }
+
+.row.s-soon { opacity:1; filter:none; }
+.row.s-soon:nth-child(odd)  { background:#181500; }
+.row.s-soon:nth-child(even) { background:#100e00; }
+.row.s-soon::before { background:#c89010; box-shadow:0 0 10px #c89010; }
+
+.row.s-start { opacity:1; filter:none; }
+.row.s-start:nth-child(odd)  { background:#1c0600; }
+.row.s-start:nth-child(even) { background:#130300; }
+.row.s-start::before { background:#e03020; box-shadow:0 0 16px #e03020,0 0 32px rgba(224,48,32,.35); }
+@keyframes row-pulse { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.012)} }
+.row.s-start { animation:row-pulse 2s ease-in-out infinite; transform-origin:center; }
+@keyframes stripe-anim { from{background-position:0 0} to{background-position:60px 60px} }
+.row.s-start::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(45deg,rgba(224,48,32,.04) 0 10px,transparent 10px 28px);
+  animation:stripe-anim 2.5s linear infinite;
+}
+
+.row.s-now { opacity:1; filter:none; }
+.row.s-now:nth-child(odd)  { background:#100202; }
+.row.s-now:nth-child(even) { background:#0a0101; }
+.row.s-now::before { background:#5a1010; }
+
+/* ── 列：シアター番号 ── */
+.col-sc {
+  flex-shrink:0; width:11vw;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-right:1px solid #191d35; gap:.2vh; padding:0 .5vw;
+}
+.sc-label { font-size:1.2vh; font-weight:300; color:#808ec0; letter-spacing:.25em; text-transform:uppercase; }
+.sc-num {
+  font-family:'Bebas Neue',sans-serif; font-size:8vh; line-height:1;
+  color:#c0cce8; transition:color .4s, text-shadow .4s;
+}
+.row.s-soon  .sc-num { color:#f0c020; }
+.row.s-start .sc-num { color:#ff6040; text-shadow:0 0 22px rgba(255,96,64,.6); animation:num-pulse 1.5s ease-in-out infinite; }
+.row.s-now   .sc-num { color:#c06060; }
+@keyframes num-pulse { 0%,100%{text-shadow:0 0 8px rgba(224,80,40,.2)} 50%{text-shadow:0 0 28px rgba(224,80,40,.8)} }
+
+/* ── 列：上映情報 ── */
+.col-info {
+  flex:1; min-width:0;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:0 2.5vw; gap:.5vh;
+}
+.info-time {
+  font-size:3vh; font-weight:700; color:#9aafda;
+  letter-spacing:.1em; font-variant-numeric:tabular-nums;
+  transition:color .4s;
+}
+.row.s-soon  .info-time { color:#e0b020; }
+.row.s-start .info-time { color:#ff8050; }
+.row.s-now   .info-time { color:#c07070; }
+
+.info-title {
+  font-size:clamp(2vh, 3.6vh, 5vh); font-weight:900;
+  color:#ffffff; letter-spacing:.03em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color .4s;
+}
+.row.s-soon  .info-title { color:#ffe050; }
+.row.s-start .info-title { color:#ffffff; }
+.row.s-now   .info-title { color:#df8080; }
+
+/* ── 列：バッジ ── */
+.col-badge {
+  flex-shrink:0; width:15vw;
+  display:flex; align-items:stretch;
+  border-left:1px solid #191d35;
+}
+.badge {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:.5vh;
+  transition:background .4s;
+}
+.bdg-icon { font-size:2.5vh; line-height:1; }
+.bdg-main {
+  font-size:3vh; font-weight:900; letter-spacing:.04em;
+  color:#7888be; text-align:center; line-height:1.15;
+  transition:color .4s, text-shadow .4s;
+}
+.bdg-sub {
+  font-size:1.3vh; font-weight:300; letter-spacing:.12em;
+  color:#5868a0; text-transform:uppercase; transition:color .4s;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.08} }
+
+.row.s-soon .bdg-main,.row.s-soon .bdg-sub { animation:blink 1s ease-in-out infinite; }
+.row.s-soon .bdg-main { color:#f0c010; font-size:2.5vh; }
+.row.s-soon .bdg-sub  { color:#c09820; }
+
+.row.s-start .badge   { background:#be2010; box-shadow:inset 0 0 24px rgba(0,0,0,.3); }
+.row.s-start .bdg-main { color:#fff; font-size:3.4vh; text-shadow:0 0 14px rgba(255,200,180,.4); animation:blink 1.2s ease-in-out infinite; }
+.row.s-start .bdg-sub  { color:rgba(255,255,255,.7); animation:blink 1.2s ease-in-out infinite; }
+.row.s-start .bdg-icon { animation:blink 1.2s ease-in-out infinite; }
+
+.row.s-now .badge   { background:#881010; }
+.row.s-now .bdg-main { color:#fff; font-size:3vh; }
+.row.s-now .bdg-sub  { color:rgba(255,255,255,.6); }
+
+/* ── テロップ ── */
+#ticker {
+  flex-shrink:0; height:4.5vh;
+  background:#090b16; border-top:1px solid #191d35;
+  display:flex; align-items:center; overflow:hidden;
+}
+#ticker-inner {
+  display:inline-block; white-space:nowrap;
+  font-size:1.8vh; color:#6070a0; letter-spacing:.06em;
+  animation:ticker 40s linear infinite; padding-left:100%;
+}
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
+
+/* ── フラッシュ ── */
+#flash {
+  position:fixed; inset:0;
+  background:rgba(200,35,10,.65);
+  pointer-events:none; opacity:0; z-index:9999;
+}
+@keyframes flash-out { 0%{opacity:1} 100%{opacity:0} }
+#flash.go { animation:flash-out 1.2s ease-out forwards; }
+
+/* ── 接続インジケータ ── */
+#conn {
+  position:fixed; top:8px; right:12px;
+  font-size:10px; padding:3px 8px; border-radius:8px;
+  background:#0a0c16; color:#303458; z-index:100;
+  transition:background .3s, color .3s;
+}
+#conn.live { background:#081408; color:#3a7a3a; border:1px solid #163016; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hdr">
+    <div class="hdr-l">
+      <div class="hdr-name">CINEPREX — 入場案内</div>
+      <div class="hdr-title">NOW SHOWING</div>
+    </div>
+    <div id="clock">--:--:--</div>
+  </div>
+  <div id="rows"></div>
+  <div id="ticker">
+    <div id="ticker-inner">
+      入場の際はチケットをご用意ください &emsp;
+      上映中のシアターへの入退場はご遠慮ください &emsp;
+      携帯電話はマナーモードに設定してください &emsp;
+      飲食物の客席への持ち込みはご遠慮ください &emsp;
+      お手洗いはロビー左奥にございます &emsp;
+    </div>
+  </div>
+</div>
+<div id="flash"></div>
+<div id="conn">オフライン</div>
+
+<script>
+'use strict';
+const META = {
+  ready: { label:'準備中',       en:'NOT READY',  icon:'⚙',  cls:'s-ready' },
+  soon:  { label:'まもなく入場', en:'COMING SOON', icon:'⏳', cls:'s-soon'  },
+  start: { label:'入場開始',     en:'NOW OPEN',    icon:'▶',  cls:'s-start' },
+  now:   { label:'上映中',       en:'Now Showing', icon:'🎬', cls:'s-now'   },
+};
+
+let schedule = [], state = [], prevStatus = {};
+const container = document.getElementById('rows');
+const connEl    = document.getElementById('conn');
+const audio     = new Audio();
+
+// ── 時計 ──
+(function tick() {
+  const n = new Date(), p = v => String(v).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+  setTimeout(tick, 1000);
+})();
+
+// ── 描画 ──
+function render() {
+  schedule.forEach(sc => {
+    const st = state.find(s => s.screenId === sc.screenId) || { status:'ready' };
+    const m  = META[st.status] || META.ready;
+    const wasStart = prevStatus[sc.screenId] === 'start';
+    const isStart  = st.status === 'start';
+    if (isStart && !wasStart) triggerFX();
+    prevStatus[sc.screenId] = st.status;
+
+    let row = document.getElementById(`row-${sc.screenId}`);
+    if (!row) {
+      row = document.createElement('div');
+      row.id = `row-${sc.screenId}`;
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="col-sc">
+          <div class="sc-label">SCREEN</div>
+          <div class="sc-num">${sc.screenId}</div>
+        </div>
+        <div class="col-info">
+          <div class="info-time"></div>
+          <div class="info-title"></div>
+        </div>
+        <div class="col-badge">
+          <div class="badge">
+            <div class="bdg-icon"></div>
+            <div class="bdg-main"></div>
+            <div class="bdg-sub"></div>
+          </div>
+        </div>`;
+      container.appendChild(row);
+    }
+    row.className = `row ${m.cls}`;
+    row.querySelector('.info-time').textContent  = sc.previewStart || '--:--';
+    row.querySelector('.info-title').textContent = sc.title || '（未設定）';
+    row.querySelector('.bdg-icon').textContent   = m.icon;
+    row.querySelector('.bdg-main').textContent   = m.label;
+    row.querySelector('.bdg-sub').textContent    = m.en;
+  });
+}
+
+// ── 入場開始エフェクト ──
+function triggerFX() {
+  const fl = document.getElementById('flash');
+  fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+  playChime();
+}
+
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[659.3,0],[783.9,.2],[880,.4],[1046.5,.6]].forEach(([f,t]) => {
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = f;
+      const s = ctx.currentTime + t;
+      g.gain.setValueAtTime(0, s);
+      g.gain.linearRampToValueAtTime(.4, s + .05);
+      g.gain.exponentialRampToValueAtTime(.001, s + .9);
+      osc.start(s); osc.stop(s + .95);
+    });
+  } catch(e) {}
+}
+
+// ── 音声再生 ──
+function playVoice(url) {
+  audio.src = url;
+  audio.volume = 1.0;
+  audio.play().catch(e => console.warn('音声再生失敗:', e));
+}
+
+// ── WebSocket ──
+let ws, reconnTimer;
+function connect() {
+  ws = new WebSocket(`ws://${location.host}`);
+
+  ws.onopen = () => {
+    connEl.textContent = '同期中';
+    connEl.className = 'live';
+    clearTimeout(reconnTimer);
+  };
+
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'INIT') {
+      schedule = msg.payload.schedule || [];
+      state    = msg.payload.state    || [];
+      render();
+    } else if (msg.type === 'STATE_UPDATE') {
+      state = msg.payload.state || [];
+      render();
+    } else if (msg.type === 'PLAY_VOICE') {
+      playVoice(msg.payload.url);
+    }
+  };
+
+  ws.onclose = () => {
+    connEl.textContent = 'オフライン';
+    connEl.className = '';
+    reconnTimer = setTimeout(connect, 3000);
+  };
+  ws.onerror = () => ws.close();
+}
+connect();
+</script>
+</body>
+</html>

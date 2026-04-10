@@ -1,0 +1,10 @@
+[
+  { "screenId": 1, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 2, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 3, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 4, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 5, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 6, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 7, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" },
+  { "screenId": 8, "status": "ready", "manualOverride": false, "updatedAt": "", "lastVoicePlayed": "" }
+]
