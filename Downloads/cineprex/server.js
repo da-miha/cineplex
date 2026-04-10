@@ -98,6 +98,10 @@ app.get('/api/schedule', (req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'データの読み込みに失敗しました' });
   }
+});
+// 追加：スケジュール入力画面を表示する
+app.get('/schedule', (req, res) => {
+  res.sendFile(__dirname + '/public/schedule.html');
 });	
 // ── API: 手動ステータス変更 ───────────────────────────
 app.post('/api/update', async (req, res) => {
